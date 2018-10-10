@@ -1,0 +1,8 @@
+# Data files
+*.csv
+
+# History files
+*.Rhistory
+
+# Group info
+*.conf
