@@ -1,5 +1,4 @@
-# Organizing TRAP-seq data into an app that is organized and searchable
-
+# Putting TRAP-seq data into an app that is organized and searchable
 library(shiny)
 library(dplyr)
 library(DT)
@@ -67,7 +66,12 @@ ui <- navbarPage(title = "TRAP-seq data",
                DT::dataTableOutput("table")
         )
       ),
+      
+      # horizontal rule between table  and username for visual separation
       fluidRow(
+        hr()
+      ),
+      tags$footer(
         textOutput("user")
       )
     )
@@ -119,7 +123,7 @@ ui <- navbarPage(title = "TRAP-seq data",
           numericInput("gene_search_enrich", "Enrichment threshold", 
                        value = 1.5, min = 1),
           actionButton("select_gene", "Select"),
-          checkboxInput("gene_search_sig", "Significant (P < 0.05)", 
+          checkboxInput("gene_search_sig", "Only Significant (P < 0.05)", 
                         value = TRUE)
         ),
        

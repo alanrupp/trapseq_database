@@ -3,6 +3,7 @@ library(ggplot2)
 library(shiny)
 library(DT)
 library(readr)
+library(purrr)
 
 # - Server function ----------------------------------------------------------
 server <- function(input, output, session) {
@@ -21,31 +22,16 @@ server <- function(input, output, session) {
     data_area = input$region
     dataset <- read_csv(paste0("data/", input$region, "_", input$pulldown, ".csv"))
     
-    # make sure requested data exists
-    validate(
-      need(nrow(dataset) > 0,
-           message = c("Error -- Dataset does not exist. Try:\n",
-                       c(paste(input$pulldown, areas[input$pulldown == pops]),
-                         "or",
-                         paste(pops[input$region == areas], input$region)
-                       )
-           )
-      )
-    )
-    
     # arrange by Enrichment value
     dataset <- dataset %>%
       arrange(desc(P < 0.05), desc(Enrichment))
-    
     
     # filter data by biotypes
     if (length(input$biotypes) != 0) {
       biotypes_selected <- biotypes_list[biotypes_list %in% input$biotypes]
       
       dataset <- dataset %>%
-        inner_join(., genes, by = "Gene") %>%
-        filter(Biotype %in% biotypes_selected) %>%
-        select(-Biotype)
+        filter(Gene %in% filter(genes, Biotype %in% biotypes_selected)$Gene)
     }
     
     # export data, along with name of request, to a list
@@ -161,23 +147,22 @@ server <- function(input, output, session) {
     )
     
     # grab the rows from all data specified by gene input
-    df <- 
-      dplyr::bind_rows(
-      purrr::map(all_data, 
-                 ~dplyr::filter(.x, 
-                                Gene == as.character(input$gene_search))
-                 )
-      )
+    df <- map(data_files, 
+              ~filter(read_csv(paste0("data/", .x)), 
+                      Gene == as.character(input$gene_search))
+    ) %>%
+      bind_rows() %>%
+      mutate("Dataset" = datasets) %>%
+      mutate(Enrichment = round(2^Enrichment, 2))
     
     # add column for dataset of origin and filter by specified enrich threshold
     df <- df %>%
-      dplyr::mutate(Dataset = datasets) %>%
-      dplyr::filter(Enrichment >= input$gene_search_enrich) %>%
+      mutate(Dataset = datasets) %>%
+      filter(Enrichment >= input$gene_search_enrich) %>%
       select("Dataset", "Gene", "Bead", "Enrichment", "P")
     
     if (input$gene_search_sig == TRUE) {
-      df <- df %>%
-        dplyr::filter(P < 0.05)
+      df <- filter(df, P < 0.05)
     }
     
     # ensure at least 1 dataset has gene enriched
