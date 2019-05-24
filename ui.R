@@ -66,6 +66,9 @@ ui <- navbarPage(title = "TRAP-seq data",
         column(width = 9,
                DT::dataTableOutput("table")
         )
+      ),
+      fluidRow(
+        textOutput("user")
       )
     )
     ),

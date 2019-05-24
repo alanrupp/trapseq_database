@@ -2,10 +2,16 @@ library(dplyr)
 library(ggplot2)
 library(shiny)
 library(DT)
+library(readr)
 
 # - Server function ----------------------------------------------------------
 server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
+  
+  output$user <- renderText(
+    paste0("signed in as: ", 
+           ifelse(is.null(session$user), "anonymous", session$user))
+  )
   
   # read in data
   data_a <- eventReactive(input$select_data, {
@@ -13,11 +19,11 @@ server <- function(input, output, session) {
     # grab data
     data_pop = input$pulldown
     data_area = input$region
-    df_a <- all_data[[paste(data_pop, data_area)]]
+    dataset <- read_csv(paste0("data/", input$region, "_", input$pulldown, ".csv"))
     
     # make sure requested data exists
     validate(
-      need(nrow(df_a) > 0,
+      need(nrow(dataset) > 0,
            message = c("Error -- Dataset does not exist. Try:\n",
                        c(paste(input$pulldown, areas[input$pulldown == pops]),
                          "or",
@@ -28,7 +34,7 @@ server <- function(input, output, session) {
     )
     
     # arrange by Enrichment value
-    df_a <- df_a %>%
+    dataset <- dataset %>%
       arrange(desc(P < 0.05), desc(Enrichment))
     
     
@@ -36,15 +42,15 @@ server <- function(input, output, session) {
     if (length(input$biotypes) != 0) {
       biotypes_selected <- biotypes_list[biotypes_list %in% input$biotypes]
       
-      df_a <- df_a %>%
+      dataset <- dataset %>%
         inner_join(., genes, by = "Gene") %>%
         filter(Biotype %in% biotypes_selected) %>%
         select(-Biotype)
     }
     
     # export data, along with name of request, to a list
-    list_a <- list(df_a, data_pop, data_area)
-    names(list_a) <- c("df", "pop", "area")
+    list_a <- list(dataset, data_pop, data_area)
+    names(list_a) <- c("dataset", "pop", "area")
     
     return(list_a)
     
@@ -53,7 +59,7 @@ server <- function(input, output, session) {
   # - Tab 1: Display table of data from a given experiment --------------------
   output$plot1 <- renderPlot({
     
-    ggplot(data_a()[["df"]], 
+    ggplot(data_a()[["dataset"]], 
            aes(x = Bead, y = Enrichment, color = P < 0.05)) +
       geom_hline(aes(yintercept = 0)) +
       geom_point(alpha = 0.4) +
@@ -71,14 +77,14 @@ server <- function(input, output, session) {
   # table of points hovered over
   output$plot1_cursor <- renderTable({
 
-    nearPoints(data_a()[["df"]], input$hover_data)
+    nearPoints(data_a()[["dataset"]], input$hover_data)
     
   })
   
   # output data table of raw data
   output$table <- renderDataTable({
     
-   df <- data_a()[["df"]]
+   df <- data_a()[["dataset"]]
     
     if (input$only_sig == TRUE) {
       df <- filter(df, P < 0.05)
