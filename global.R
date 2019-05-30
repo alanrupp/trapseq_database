@@ -36,6 +36,4 @@ biotypes <-
   group_by(Biotype) %>%
   tally(.) %>%
   arrange(desc(n)) %>%
-  select(-n)
-
-biotypes_list <- biotypes$Biotype
+  .$Biotype

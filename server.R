@@ -9,6 +9,7 @@ library(purrr)
 server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
   
+  # grab user info
   output$user <- renderText(
     paste0("signed in as: ", 
            ifelse(is.null(session$user), "anonymous", session$user))
@@ -27,7 +28,7 @@ server <- function(input, output, session) {
     
     # filter data by biotypes
     if (length(input$biotypes) != 0) {
-      biotypes_selected <- biotypes_list[biotypes_list %in% input$biotypes]
+      biotypes_selected <- biotypes[biotypes %in% input$biotypes]
       dataset <- filter(dataset, Gene %in% 
                           filter(genes, Biotype %in% biotypes_selected)$Gene)
     }
