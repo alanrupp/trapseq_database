@@ -22,18 +22,14 @@ ui <- navbarPage(title = "TRAP-seq data",
       fluidRow(
         column(width = 3, 
           selectInput("pulldown", "Pulldown:", choices = pulldown_list)),
-        column(width = 3,
-          selectInput("region", "Region:", choices = region_list)),
+        column(width = 6,
+               selectizeInput("biotypes", "Filter by biotype:",
+                              choices = biotypes_list, multiple = TRUE,
+                              selected = "protein_coding",
+                              width = "100%")),
         column(width = 3, align = 'left', style = 'margin-top: 25px;',
                actionButton("select_data", "Select", width = "100%"))
         ),
-      
-      fluidRow(
-        column(width = 6,
-          selectizeInput("biotypes", "Filter by biotype:",
-                         choices = biotypes_list, multiple = TRUE))
-      ),
-      
       
       fluidRow(
         # plot all genes
@@ -85,15 +81,15 @@ ui <- navbarPage(title = "TRAP-seq data",
         sidebarLayout(
           sidebarPanel(
             selectizeInput("display_data", "Genes enriched in:", 
-                           choices = datasets, selected = datasets[1]),
+                           choices = pulldown_list, selected = pulldown_list[1]),
             selectizeInput("OR_data", "OR",
-                           choices = datasets,
+                           choices = pulldown_list,
                            multiple = TRUE),
             selectizeInput("AND_data", "AND",
-                           choices = datasets,
+                           choices = pulldown_list,
                            multiple = TRUE),
             selectizeInput("NOT_data", "NOT", 
-                           choices = datasets, 
+                           choices = pulldown_list, 
                            multiple = TRUE),
             tags$hr(),
             numericInput("enrichment_threshold_b", "Enrichment threshold",

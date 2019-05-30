@@ -18,20 +18,18 @@ server <- function(input, output, session) {
   data_a <- eventReactive(input$select_data, {
     
     # grab data
-    data_pop = input$pulldown
-    data_area = input$region
-    dataset <- read_csv(paste0("data/", input$region, "_", input$pulldown, ".csv"))
+    data_pop = unlist(str_split(input$pulldown, " "))[1]
+    data_area = unlist(str_split(input$pulldown, " "))[2]
+    dataset <- read_csv(paste0("data/", data_area, "_", data_pop, ".csv"))
     
     # arrange by Enrichment value
-    dataset <- dataset %>%
-      arrange(desc(P < 0.05), desc(Enrichment))
+    dataset <- arrange(dataset, desc(P < 0.05), desc(Enrichment))
     
     # filter data by biotypes
     if (length(input$biotypes) != 0) {
       biotypes_selected <- biotypes_list[biotypes_list %in% input$biotypes]
-      
-      dataset <- dataset %>%
-        filter(Gene %in% filter(genes, Biotype %in% biotypes_selected)$Gene)
+      dataset <- filter(dataset, Gene %in% 
+                          filter(genes, Biotype %in% biotypes_selected)$Gene)
     }
     
     # export data, along with name of request, to a list
@@ -152,12 +150,12 @@ server <- function(input, output, session) {
                       Gene == as.character(input$gene_search))
     ) %>%
       bind_rows() %>%
-      mutate("Dataset" = datasets) %>%
+      mutate("Dataset" = str_replace(data_files, "(.+)_(.+)", "\\1 \\2")) %>%
       mutate(Enrichment = round(2^Enrichment, 2))
     
     # add column for dataset of origin and filter by specified enrich threshold
     df <- df %>%
-      mutate(Dataset = datasets) %>%
+      mutate(Dataset = str_replace(data_files, "(.+)_(.+)", "\\1 \\2")) %>%
       filter(Enrichment >= input$gene_search_enrich) %>%
       select("Dataset", "Gene", "Bead", "Enrichment", "P")
     
